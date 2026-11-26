@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Local self-test artifacts (MySQL binary tarball, datadirs, local deps)
+.selftest/
+selftest-env/
+
+# Env / editor
+.env
+.idea/
+.vscode/
+*.log

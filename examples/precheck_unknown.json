@@ -1,0 +1,6 @@
+{
+  "changes": [
+    {"id": 1001, "login_name": "alice_new"},
+    {"id": 999999, "login_name": "ghost"}
+  ]
+}

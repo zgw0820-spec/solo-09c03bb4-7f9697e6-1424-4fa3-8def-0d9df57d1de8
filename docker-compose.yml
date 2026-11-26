@@ -1,0 +1,61 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: collation-precheck-mysql
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+      - --transaction-isolation=REPEATABLE-READ
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpw
+      MYSQL_DATABASE: account_audit
+      MYSQL_USER: audit
+      MYSQL_PASSWORD: auditpw
+    ports:
+      # Exposed so the trial curl / local test suite can reach MySQL too.
+      - "13306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-prootpw"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 20s
+    restart: unless-stopped
+
+  api:
+    build:
+      context: ./api
+    container_name: collation-precheck-api
+    environment:
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_NAME: account_audit
+      DB_USER: audit
+      DB_PASSWORD: auditpw
+      ACCOUNT_SCHEMA: account_audit
+      ACCOUNT_TABLE: account
+      ID_COLUMN: id
+      LOGIN_COLUMN: login_name
+      TARGET_COLLATION: utf8mb4_0900_ai_ci
+    ports:
+      - "8000:8000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - "CMD"
+        - "python"
+        - "-c"
+        - "import json,urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=3).status==200 else 1)"
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
